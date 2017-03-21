@@ -25,7 +25,7 @@ if ('ontouchstart' in window) {
         lat = 0, onMouseDownLat = 0,
         phi = 0, theta = 0;
     var textureLoader = new THREE.TextureLoader();
-    var wrapperElm = document.getElementById('canvas-frame'); // 任意のDIV-IDを指定出来るようにすること
+    var canvasFrame = document.getElementById('canvas-frame'); // 任意のDIV-IDを指定出来るようにすること
 
     // テクスチャのロード
     textureLoader.load('Panorama.jpg', function (texture) {
@@ -40,7 +40,7 @@ if ('ontouchstart' in window) {
      */
     function init(texture) {
         // カメラ作成
-        camera = new THREE.PerspectiveCamera(fov, wrapperElm.clientWidth / wrapperElm.clientHeight, 1, 1000);
+        camera = new THREE.PerspectiveCamera(fov, canvasFrame.clientWidth / canvasFrame.clientHeight, 1, 1000);
 
         // 背景メッシュ
         var mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 32, 16), new THREE.MeshBasicMaterial({ map: texture }));
@@ -53,16 +53,16 @@ if ('ontouchstart' in window) {
         // レンダラ作成
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(wrapperElm.clientWidth, wrapperElm.clientHeight);
+        renderer.setSize(canvasFrame.clientWidth, canvasFrame.clientHeight);
 
         // canvasをフレームに追加
         canvas = renderer.domElement;
-        wrapperElm.appendChild(canvas);
+        canvasFrame.appendChild(canvas);
 
         // イベント定義
-        canvas.addEventListener(EVENT.TOUCH_START, onDocumentMouseDown, false);
-        canvas.addEventListener('mousewheel', onDocumentMouseWheel, false);
-        canvas.addEventListener('MozMousePixelScroll', onDocumentMouseWheel, false);
+        canvas.addEventListener(EVENT.TOUCH_START, onCanvasMouseDown, false);
+        canvas.addEventListener('mousewheel', onCanvasMouseWheel, false);
+        canvas.addEventListener('MozMousePixelScroll', onCanvasMouseWheel, false);
         window.addEventListener('resize', onWindowResized, false);
         onWindowResized(null);
     }
@@ -72,15 +72,15 @@ if ('ontouchstart' in window) {
      * @param {*} event 
      */
     function onWindowResized(event) {
-        renderer.setSize(wrapperElm.clientWidth, wrapperElm.clientHeight);
-        camera.projectionMatrix.makePerspective(fov, wrapperElm.clientWidth / wrapperElm.clientHeight, 1, 1100);
+        renderer.setSize(canvasFrame.clientWidth, canvasFrame.clientHeight);
+        camera.projectionMatrix.makePerspective(fov, canvasFrame.clientWidth / canvasFrame.clientHeight, 1, 1100);
     }
 
     /**
      * マウスダウン(タッチスタート)イベント
      * @param {*} event 
      */
-    function onDocumentMouseDown(event) {
+    function onCanvasMouseDown(event) {
         //event.preventDefault();
 
         // マウスダウン(タッチスタート)位置取得
@@ -98,15 +98,30 @@ if ('ontouchstart' in window) {
         onMouseDownLat = lat;
 
         // マウスムーブ(タッチムーブ)、マウスアップ(タッチエンド)の検知を開始
-        canvas.addEventListener(EVENT.TOUCH_MOVE, onDocumentMouseMove, false);
-        canvas.addEventListener(EVENT.TOUCH_END, onDocumentMouseUp, false);
+        canvas.addEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
+        canvas.addEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
+        canvasFrame.addEventListener(EVENT.TOUCH_MOVE, onCanvasFrameMouseMove, false);
+    }
+
+    /**
+     * キャンバス枠のマウスムーブイベント
+     * @param {*} event 
+     */
+    function onCanvasFrameMouseMove(event) {
+        // キャンバスから外れたら各種イベントを終了させる
+        if (event.toElement.tagName !== 'CANVAS') {
+            canvas.removeEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
+            canvas.removeEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
+            canvasFrame.removeEventListener(EVENT.TOUCH_MOVE, onCanvasFrameMouseMove, false);
+            console.log('[Event]CanvasFrameMouseMove');
+        }
     }
 
     /**
      * マウスムーブ(タッチムーブ)イベント
      * @param {*} event 
      */
-    function onDocumentMouseMove(event) {
+    function onCanvasMouseMove(event) {
         //event.preventDefault();
 
         // マウスムーブ位置(タッチムーブ位置)取得
@@ -129,17 +144,17 @@ if ('ontouchstart' in window) {
      * マウスアップ(タッチエンド)イベント
      * @param {*} event 
      */
-    function onDocumentMouseUp(event) {
+    function onCanvasMouseUp(event) {
         // マウスムーブ(タッチムーブ)、マウスアップ(タッチエンド)の検知を終了
-        canvas.removeEventListener(EVENT.TOUCH_MOVE, onDocumentMouseMove, false);
-        canvas.removeEventListener(EVENT.TOUCH_END, onDocumentMouseUp, false);
+        canvas.removeEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
+        canvas.removeEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
     }
 
     /**
      * マウスホイールイベント
      * @param {*} event 
      */
-    function onDocumentMouseWheel(event) {
+    function onCanvasMouseWheel(event) {
         // WebKit
         if (event.wheelDeltaY) {
             fov -= event.wheelDeltaY * 0.05;
@@ -150,7 +165,7 @@ if ('ontouchstart' in window) {
         } else if (event.detail) {
             fov += event.detail * 1.0;
         }
-        camera.projectionMatrix.makePerspective(fov, wrapperElm.clientWidth / wrapperElm.clientHeight, 1, 1100);
+        camera.projectionMatrix.makePerspective(fov, canvasFrame.clientWidth / canvasFrame.clientHeight, 1, 1100);
     }
 
     /**

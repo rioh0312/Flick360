@@ -26,6 +26,7 @@ if ('ontouchstart' in window) {
         phi = 0, theta = 0;
     var textureLoader = new THREE.TextureLoader();
     var canvasFrame = document.getElementById('canvas-frame'); // 任意のDIV-IDを指定出来るようにすること
+    var effective = document.getElementById('effective')
 
     // テクスチャのロード
     textureLoader.load('Panorama.jpg', function (texture) {
@@ -60,9 +61,9 @@ if ('ontouchstart' in window) {
         canvasFrame.appendChild(canvas);
 
         // イベント定義
-        canvas.addEventListener(EVENT.TOUCH_START, onCanvasMouseDown, false);
-        canvas.addEventListener('mousewheel', onCanvasMouseWheel, false);
-        canvas.addEventListener('MozMousePixelScroll', onCanvasMouseWheel, false);
+        effective.addEventListener(EVENT.TOUCH_START, onEffectiveMouseDown, false);
+        effective.addEventListener('mousewheel', onEffectiveMouseWheel, false);
+        effective.addEventListener('MozMousePixelScroll', onEffectiveMouseWheel, false);
         window.addEventListener('resize', onWindowResized, false);
         onWindowResized(null);
     }
@@ -80,8 +81,8 @@ if ('ontouchstart' in window) {
      * マウスダウン(タッチスタート)イベント
      * @param {*} event 
      */
-    function onCanvasMouseDown(event) {
-        //event.preventDefault();
+    function onEffectiveMouseDown(event) {
+        event.preventDefault();
 
         // マウスダウン(タッチスタート)位置取得
         if (event.clientX) {
@@ -98,31 +99,24 @@ if ('ontouchstart' in window) {
         onMouseDownLat = lat;
 
         // マウスムーブ(タッチムーブ)、マウスアップ(タッチエンド)の検知を開始
+        effective.addEventListener(EVENT.TOUCH_MOVE, onEffectiveMouseMove, false);
+        effective.addEventListener(EVENT.TOUCH_END, onEffectiveMouseUp, false);
         canvas.addEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
-        canvas.addEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
-        canvasFrame.addEventListener(EVENT.TOUCH_MOVE, onCanvasFrameMouseMove, false);
     }
 
-    /**
-     * キャンバス枠のマウスムーブイベント
-     * @param {*} event 
-     */
-    function onCanvasFrameMouseMove(event) {
-        // キャンバスから外れたら各種イベントを終了させる
-        if (event.toElement.tagName !== 'CANVAS') {
-            canvas.removeEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
-            canvas.removeEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
-            canvasFrame.removeEventListener(EVENT.TOUCH_MOVE, onCanvasFrameMouseMove, false);
-            console.log('[Event]CanvasFrameMouseMove');
-        }
+    function onCanvasMouseMove(event) {
+        // マウスムーブ(タッチムーブ)、マウスアップ(タッチエンド)の検知を終了
+        effective.removeEventListener(EVENT.TOUCH_MOVE, onEffectiveMouseMove, false);
+        effective.removeEventListener(EVENT.TOUCH_END, onEffectiveMouseUp, false);
+        canvas.removeEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
     }
 
     /**
      * マウスムーブ(タッチムーブ)イベント
      * @param {*} event 
      */
-    function onCanvasMouseMove(event) {
-        //event.preventDefault();
+    function onEffectiveMouseMove(event) {
+        event.preventDefault();
 
         // マウスムーブ位置(タッチムーブ位置)取得
         if (event.clientX) {
@@ -144,17 +138,17 @@ if ('ontouchstart' in window) {
      * マウスアップ(タッチエンド)イベント
      * @param {*} event 
      */
-    function onCanvasMouseUp(event) {
+    function onEffectiveMouseUp(event) {
         // マウスムーブ(タッチムーブ)、マウスアップ(タッチエンド)の検知を終了
-        canvas.removeEventListener(EVENT.TOUCH_MOVE, onCanvasMouseMove, false);
-        canvas.removeEventListener(EVENT.TOUCH_END, onCanvasMouseUp, false);
+        effective.removeEventListener(EVENT.TOUCH_MOVE, onEffectiveMouseMove, false);
+        effective.removeEventListener(EVENT.TOUCH_END, onEffectiveMouseUp, false);
     }
 
     /**
      * マウスホイールイベント
      * @param {*} event 
      */
-    function onCanvasMouseWheel(event) {
+    function onEffectiveMouseWheel(event) {
         // WebKit
         if (event.wheelDeltaY) {
             fov -= event.wheelDeltaY * 0.05;
